@@ -1,4 +1,7 @@
-from textnode import TextNode
+
+from textnode import TextNode,TextType 
+
+import re
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
   
     result = []
@@ -15,3 +18,36 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
                 result.append(TextNode(node_text_list[i],text_type))
             i+=1
     return result
+
+def extract_markdown_images(text):
+    marches = re.findall(r"!\[([^\[\]]*)\]\(([^\(\)]*)\)",text)
+    return marches
+def extract_markdown_links(link):
+    marches = re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)",link)
+    return marches
+
+def split_nodes_image(old_nodes):
+    splited_dict  = {}
+    result = []
+    for i in range(len(old_nodes)):
+        splited_dict[i] = {}
+        splited_dict[i]["images"]=extract_markdown_images(old_nodes[i].text)
+        if len(splited_dict[i]["images"]) == 0:
+            result.append(old_nodes[i])
+        else:
+            splited_dict[i]["texts"] = []
+            original_text = old_nodes[i].text
+            for img in splited_dict[i]["images"]:
+                text = original_text.split(f"![{img[0]}]({img[1]})",maxsplit=1)
+                original_text = text[1] 
+                splited_dict[i]["texts"].append(text[0])
+                if text[0] !='':
+                    result.append(TextNode(text[0],TextType.TEXT,None))
+                result.append(TextNode(img[0],TextType.IMAGE,img[1]))
+    
+    return result
+
+def test_split_no_images(self):
+    node = TextNode("Just plain text with no images.", TextType.TEXT)
+    new_nodes = split_nodes_image([node])
+    self.assertListEqual([node], new_nodes)
