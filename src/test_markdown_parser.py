@@ -1,4 +1,4 @@
-from markdownparser import split_nodes_delimiter,extract_markdown_images ,extract_markdown_links,split_nodes_image
+from markdownparser import split_nodes_delimiter,extract_markdown_images ,extract_markdown_links,split_nodes_image,split_nodes_links
 from textnode import TextNode,TextType 
 import unittest
 
@@ -105,3 +105,36 @@ class TestHTMLNode(unittest.TestCase):
         ],
         new_nodes,
     )
+    def test_split_links(self):
+        node = TextNode(
+        "Check out [Google](https://www.google.com) and [Boot.dev](https://www.boot.dev)",
+        TextType.TEXT,
+    )
+        new_nodes = split_nodes_links([node])
+        self.assertListEqual(
+        [
+            TextNode("Check out ", TextType.TEXT),
+            TextNode("Google", TextType.LINK, "https://www.google.com"),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("Boot.dev", TextType.LINK, "https://www.boot.dev"),
+        ],
+        new_nodes,
+    )
+    def test_split_links_at_edges(self):
+        node = TextNode(
+        "[First Link](https://first.com) then text [Last Link](https://last.com)",
+        TextType.TEXT,
+    )
+        new_nodes = split_nodes_links([node])
+        self.assertListEqual(
+        [
+            TextNode("First Link", TextType.LINK, "https://first.com"),
+            TextNode(" then text ", TextType.TEXT),
+            TextNode("Last Link", TextType.LINK, "https://last.com"),
+        ],
+        new_nodes,
+    )
+    def test_split_no_links(self):
+        node = TextNode("This is just plain text with no links.", TextType.TEXT)
+        new_nodes = split_nodes_links([node])
+        self.assertListEqual([node], new_nodes)
