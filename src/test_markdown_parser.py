@@ -1,10 +1,9 @@
-from markdownparser import split_nodes_delimiter,extract_markdown_images ,extract_markdown_links,split_nodes_image,split_nodes_links
+from markdownparser import split_nodes_delimiter,extract_markdown_images ,extract_markdown_links,split_nodes_image,split_nodes_links,text_to_textnodes
 from textnode import TextNode,TextType 
 import unittest
 
 
 class TestHTMLNode(unittest.TestCase):
-
     def test_parse_code(self):
         node = TextNode("This is text with a `code block` word", TextType.TEXT)
         new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
@@ -72,7 +71,7 @@ class TestHTMLNode(unittest.TestCase):
         )
     def test_split_image_at_edges(self):
         node = TextNode(
-            "![first](https://link1.com) middle text ![last](https://link2.com)",
+            "![first](https://link1.com) middle text ![last](https://link2.com) another thing",
             TextType.TEXT,
         )
         new_nodes = split_nodes_image([node])
@@ -81,6 +80,8 @@ class TestHTMLNode(unittest.TestCase):
             TextNode("first", TextType.IMAGE, "https://link1.com"),
             TextNode(" middle text ", TextType.TEXT),
             TextNode("last", TextType.IMAGE, "https://link2.com"),
+
+            TextNode(" another thing", TextType.TEXT),
         ],
         new_nodes,
     )
@@ -138,3 +139,43 @@ class TestHTMLNode(unittest.TestCase):
         node = TextNode("This is just plain text with no links.", TextType.TEXT)
         new_nodes = split_nodes_links([node])
         self.assertListEqual([node], new_nodes)
+
+    
+    def test_text_to_textnodes(self):
+
+        self.maxDiff = None
+        text = "This is **text** with an _italic_ word and a `code block` and an ![image](https://i.imgur.com/zjjcJKZ.png) and a [link](https://boot.dev)"
+        nodes = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("text", TextType.BOLD),
+                TextNode(" with an ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" word and a ", TextType.TEXT),
+                TextNode("code block", TextType.CODE),
+                TextNode(" and an ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+                TextNode(" and a ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://boot.dev"),],nodes,)
+    def test_text_to_textnodes(self):
+        self.maxDiff = None
+        text = "This is **text** with an _italic_ word and a `code block` and an ![image](https://i.imgur.com/zjjcJKZ.png) and a [link](https://boot.dev)"
+        nodes = text_to_textnodes(text)
+        for i, node in enumerate(nodes):
+            print(f"Index {i}: {node}")
+        self.assertListEqual(
+        [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("text", TextType.BOLD),
+            TextNode(" with an ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" word and a ", TextType.TEXT),
+            TextNode("code block", TextType.CODE),
+            TextNode(" and an ", TextType.TEXT),
+            TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+            TextNode(" and a ", TextType.TEXT),
+            TextNode("link", TextType.LINK, "https://boot.dev"),
+        ], # <--- Make sure there is no ] on the lines above this!
+        nodes,
+        )
