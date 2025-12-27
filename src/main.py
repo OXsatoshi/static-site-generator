@@ -1,38 +1,15 @@
 from textnode import TextNode 
 from htmlnode import HTMLNode
+import sys
 import os,shutil
 from markdownparser import markdown_to_html_node
 def extract_header_from_md(markdown):
     lines = markdown.split("\n")
     for line in lines:
-        print(line)
         if line.startswith("# "):
             return line[2:].strip()
     raise Exception("No h1 header found in markdown")
-def extract_header_from_mds(markdown):
-    markdown_lines = markdown.strip().splitlines()
-    if len(markdown_lines) == 0:
-        raise Exception("markdown file is empty")
-    if markdown_lines[0].strip().count("#") != 1:
-        raise Exception("must start with a header")
-    return markdown_lines[0].strip("#").strip()
-def copy_files_from(src,dst,list_of_files):
-    if not os.path.exists(dst):
-        os.mkdir(dst)
-    else:
-        shutil.rmtree(dst)
-        os.mkdir(dst)
-    for file in list_of_files:
-        src_path = os.path.join(src,file)
-        if os.path.isfile(src_path):
-            shutil.copy(src_path,dst)
-            continue
-        inner_list = os.listdir(src_path)
-        rel_dire = os.path.join(dst,file)
-        if not os.path.exists(os.path.join(dst,file)):
-            os.mkdir(os.path.join(dst,file))
-        copy_files_from(src_path,rel_dire,inner_list)
-def generate_page(from_path,template_path,dest_path):
+def generate_page(from_path,template_path,dest_path,base_url):
     try:
         markdown_file = open(from_path,'r')
         template_file = open(template_path,'r')
@@ -46,23 +23,10 @@ def generate_page(from_path,template_path,dest_path):
     header = extract_header_from_md(markdown_content)
     replaced_header = template_content.replace("{{ Title }}",header)
     replaced_content = replaced_header.replace("{{ Content }}",html_string)
-
-    generated_file.write(replaced_content)
-def generatesiii_paths_recursive(dir_path_content,template_path,des_dir_path):
-    list_of_files = os.listdir(dir_path_content)
-    for file in list_of_files:
-        src_file_path = os.path.join(dir_path_content,file)
-        if os.path.isfile(src_file_path):
-            des_file_path = os.path.join(des_dir_path,file[-2:]+".html")
-            generate_page(src_file_path,template_path,des_file_path)
-            continue
-        inner_list = os.listdir(src_file_path)
-        des_file_path = os.path.join(des_dir_path,file)
-        if not os.path.exists(des_file_path):
-            os.mkdir(des_file_path)
-        generate_paths_recursive(src_file_path,template_path,des_file_path)
-
-def generate_paths_recursive(dir_path_content, template_path, dest_dir_path):
+    final_contetn = replaced_content.replace('href=/',f'href={base_url}').replace('src=/',f"src={base_url}")
+    generated_file.write(final_contetn)
+    
+def generate_paths_recursive(dir_path_content, template_path, dest_dir_path,base_url):
     # Get all items in the current content directory
     list_of_files = os.listdir(dir_path_content)
     
@@ -78,7 +42,7 @@ def generate_paths_recursive(dir_path_content, template_path, dest_dir_path):
                 dest_path = dest_path[:-3] + ".html"
                 
                 print(f"Generating page: {from_path} -> {dest_path}")
-                generate_page(from_path, template_path, dest_path)
+                generate_page(from_path, template_path, dest_path,base_url)
         else:
             # It's a directory! 
             # 1. Create the corresponding directory in the destination
@@ -86,11 +50,27 @@ def generate_paths_recursive(dir_path_content, template_path, dest_dir_path):
                 os.makedirs(dest_path)
             
             # 2. Recurse into the subdirectory
-            generate_paths_recursive(from_path, template_path, dest_path)
+            generate_paths_recursive(from_path, template_path, dest_path,base_url)
+def copy_files_from(source_dir_path, dest_dir_path):
+    # We do NOT delete the folder here, because this function recurses.
+    if not os.path.exists(dest_dir_path):
+        os.mkdir(dest_dir_path)
+
+    for filename in os.listdir(source_dir_path):
+        from_path = os.path.join(source_dir_path, filename)
+        to_path = os.path.join(dest_dir_path, filename)
+        print(f" * {from_path} -> {to_path}")
+
+        if os.path.isfile(from_path):
+            shutil.copy(from_path, to_path)
+        else:
+            # It's a directory, so we recurse
+            copy_files_from(from_path, to_path)
 def main():
+    base_url="/" if sys.argv[1] is None else sys.argv[1]
 
     copy_files_from("/home/nabil/Desktop/repos/static-site-generator/static/",
-                    "/home/nabil/Desktop/repos/static-site-generator/public/",os.listdir("static"))
-    generate_paths_recursive("content/","template.html","public/")
+                    "/home/nabil/Desktop/repos/static-site-generator/docs/")
+    generate_paths_recursive("content/","template.html","docs/",base_url)
 
 main()
