@@ -23,8 +23,9 @@ def generate_page(from_path,template_path,dest_path,base_url):
     header = extract_header_from_md(markdown_content)
     replaced_header = template_content.replace("{{ Title }}",header)
     replaced_content = replaced_header.replace("{{ Content }}",html_string)
-    final_contetn = replaced_content.replace('href=/',f'href={base_url}').replace('src=/',f"src={base_url}")
-    generated_file.write(final_contetn)
+    final_content = replaced_content.replace('href="/', f'href="{base_url}')
+    final_content = final_content.replace('src="/', f'src="{base_url}')
+    generated_file.write(final_content)
     
 def generate_paths_recursive(dir_path_content, template_path, dest_dir_path,base_url):
     # Get all items in the current content directory
