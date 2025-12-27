@@ -67,8 +67,10 @@ def copy_files_from(source_dir_path, dest_dir_path):
             # It's a directory, so we recurse
             copy_files_from(from_path, to_path)
 def main():
-    base_url="/" if sys.argv[1] is None else sys.argv[1]
+    base_url = "/"
 
+    if len(sys.argv) > 1:
+        base_url = sys.argv[1]
     copy_files_from("/home/nabil/Desktop/repos/static-site-generator/static/",
                     "/home/nabil/Desktop/repos/static-site-generator/docs/")
     generate_paths_recursive("content/","template.html","docs/",base_url)
