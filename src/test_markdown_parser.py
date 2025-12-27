@@ -1,4 +1,5 @@
 from markdownparser import split_nodes_delimiter,extract_markdown_images ,extract_markdown_links,split_nodes_image,split_nodes_links,text_to_textnodes
+from markdownparser import markdown_to_blocks
 from textnode import TextNode,TextType 
 import unittest
 
@@ -162,8 +163,6 @@ class TestHTMLNode(unittest.TestCase):
         self.maxDiff = None
         text = "This is **text** with an _italic_ word and a `code block` and an ![image](https://i.imgur.com/zjjcJKZ.png) and a [link](https://boot.dev)"
         nodes = text_to_textnodes(text)
-        for i, node in enumerate(nodes):
-            print(f"Index {i}: {node}")
         self.assertListEqual(
         [
             TextNode("This is ", TextType.TEXT),
@@ -178,4 +177,23 @@ class TestHTMLNode(unittest.TestCase):
             TextNode("link", TextType.LINK, "https://boot.dev"),
         ], # <--- Make sure there is no ] on the lines above this!
         nodes,
+        )
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
         )
